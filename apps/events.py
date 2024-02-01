@@ -36,7 +36,8 @@ def mqtt_subscribe(client: mqtt_client):
         print(topic)
         print(data)
         # Đưa dữ liệu vào hàng đợi
-        data_callback(data)
+        with app.app_context():
+            data_callback(data)
         # TODO: 
         # Lấy dl mới nhất từ db lên lưu vào latest_data
         # latest_data = {
