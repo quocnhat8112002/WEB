@@ -5,7 +5,7 @@ import random
 from flask import app
 from datetime import datetime
 
-socketio = SocketIO(cors_allowed_origins='*', logger=True)
+socketio = SocketIO( app ,cors_allowed_origins='*', logger=True)
 
 @socketio.on('connect')
 def connect_event():
