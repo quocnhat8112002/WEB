@@ -1,0 +1,65 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Add Device {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+	<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+	<!-- [ Main Content ] start -->
+	<div class="pcoded-main-container">
+		<div class="pcoded-content">
+			<!-- [ breadcrumb ] start -->
+			<div class="page-header">
+				<div class="page-block">
+					<div class="row align-items-center">
+						<div class="col-md-12">
+							<div class="page-header-title">
+								<h5 class="m-b-10">Add Device</h5>
+							</div>
+							<ul class="breadcrumb">
+								<li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+								<li class="breadcrumb-item"><a href="#">Thêm thiết bị vào phòng : {{room_id}}</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+            <div className="container">
+                <form id="deviceForm">
+                    
+                    <label for="name">Tên thiết bị :</label><br>
+                    <input type="text" id="name" name="name" required className="form-control form-control-sm"><br>
+
+					<label for="id">ID thiết bị:</label><br>
+                    <input type="text" id="id" name="id" required className="form-control form-control-sm"><br>
+
+                    <label for="type">Loại:</label><br>
+                    <input type="text" id="type" name="type" required className="form-control form-control-sm"><br>
+                
+                    <label for="description">Description :</label><br>
+                    <textarea id="description" name="description" rows="4" cols="50" ></textarea><br>
+
+                    <label for="info">Info :</label><br>
+                    <textarea id="info" name="info" rows="4" cols="50" ></textarea><br>
+                
+                    
+					<button type="button" onclick="addDevice()">THÊM</button>
+                </form>
+				
+            </div>
+		</div>
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+	<script src="/static/assets/js/pages/add-device.js"></script>
+
+{% endblock javascripts %}

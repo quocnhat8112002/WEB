@@ -1,0 +1,191 @@
+{% extends "layouts/base.html" %}
+{% block title %} Dashboard {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+    <!-- [ Main Content ] start -->
+  <!-- Include React and ReactDOM -->
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+
+
+    <div class="pcoded-main-container">
+        <div class="pcoded-content">
+            <!-- [ Main Content ] start -->
+            <div class="row">
+                <!-- order-card start -->
+
+<!-- BANG QUAN LY -->
+                <div class="col-md-12">
+                    <div class="card table-card">
+                        <div class="card-header">
+                            <h5>QUẢN LÝ HỆ THỐNG </h5>
+                            <div class="card-header-right">
+                                <div class="btn-group card-option">
+                                    <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="feather icon-more-horizontal"></i>
+                                    </button>
+                                    <ul class="list-unstyled card-option dropdown-menu dropdown-menu-end">
+
+                                        <!-- Them phong moi -->
+                                        <li class="dropdown-item close-card"><a href="add_room.html"><i class="feather icon-plus"></i> ADD</a></li>
+                                        <li class="dropdown-item minimize-card"><a href="#"><span><i class="feather icon-minus"></i> collapse</span><span style="display:none"><i class="feather icon-plus"></i> expand</span></a></li>
+                                        <li class="dropdown-item reload-card"><a href="#"><i class="feather icon-refresh-cw"></i> reload</a></li>
+                                        <li class="dropdown-item close-card"><a href="#"><i class="feather icon-trash"></i> remove</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <ul class="nav nav-pills nav-fill mt-3 border-bottom pb-3" id="pills-tab" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true"><i class="feather icon-film m-r-5"></i> PHÒNG HỌC</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false"><i class="feather icon-file-text m-r-5"></i> CMS</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false"><i class="feather icon-mail m-r-5"></i> Mail</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="pills-news-tab" data-bs-toggle="pill" href="#pills-news" role="tab" aria-controls="pills-news" aria-selected="false"><i class="feather icon-monitor m-r-5"></i> Newslatter</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body p-0">
+                            
+                            <div class="tab-content" id="pills-tabContent">
+                                <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+                                    <div class="table-responsive">
+                                        <div class="customer-scroll1" id="root" style="height:362px;position:relative;">
+                                            <table class="table table-hover m-b-0">
+                                                <thead>
+                                                <tr>
+                                                    <th><span>ID</span></th>
+                                                    <th><span>Tên Phòng <a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                    <th><span>Mô tả <a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                    <th><span>Trạng Thái<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                    <th><span>Điều Khiển<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                    
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for room in room_list %}
+                                                    <tr>
+                                                        <td>{{ room.id }}</td>
+                                                        <td>{{ room.name }}</td>
+                                                        <td>{{ room.description }}</td>
+                                                        <td>{{ room.description }}</td>
+                                                        <!-- show bang dieu khien phong -->
+                                                        <td>
+                                                            <a href="{{ url_for('home_blueprint.route_template', template='room_control.html', room_id=room.id) }}"  class="nav-item nav-link room-control" >
+                                                                <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                                                                    <i class="feather icon-eye"></i>
+                                                                </div>
+                                                            </a>
+                                                        </td>
+
+                                                        <td >
+                                                            <a href="{{ url_for('home_blueprint.route_template', template='edit_room.html', room_id=room.id) }}"  class="nav-item nav-link edit-room" >
+                                                                <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                                                                    <i class="feather icon-edit"></i>
+                                                                </div>
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <a  class="nav-item nav-link" onclick="deleteRoom('{{ room.id }}')">
+                                                                <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                                                                    <i class="feather icon-trash-2"></i>
+                                                                </div>
+                                                            </a>
+                                                        </td>
+
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
+                                    <div class="table-responsive">
+                                        <div class="customer-scroll1" style="height:362px;position:relative;">
+                                            <table class="table table-hover m-b-0">
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
+                                    <div class="table-responsive">
+                                        <div class="customer-scroll2" style="height:362px;position:relative;">
+                                            <table class="table table-hover m-b-0">
+                                                
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="pills-news" role="tabpanel" aria-labelledby="pills-news-tab">
+                                    <div class="table-responsive">
+                                        <div class="customer-scroll3" style="height:362px;position:relative;">
+                                            <table class="table table-hover m-b-0">
+
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Customer overview end -->
+            </div>
+            <!-- [ Main Content ] end -->
+        </div>
+    </div>
+    <!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+    <!-- socketio script tag -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        const socket = io();
+        socket.on('connect', function(data) {
+            // Handle the received data
+            console.log('I am connected!!!');
+          });
+        socket.send('The send method is used to initiate the message event');
+        socket.emit('new event', 'The data can be an object or a string');
+
+        socket.on('server event', function(data) {
+            console.log(data);
+        });
+
+        socket.on('sales', function(data) {
+            // console.log(data);
+            const total_sales = document.getElementById('total-sales');
+            const sales_completed = document.getElementById('sales-completed');
+
+            total_sales.innerHTML = data['total-sales'];
+            sales_completed.innerHTML = data['sales-completed'];
+        });
+    </script>
+    <!-- Apex Chart -->
+    <script src="/static/assets/js/plugins/apexcharts.min.js"></script>
+
+    <!-- custom-chart js -->
+    <script src="/static/assets/js/pages/dashboard-main.js"></script>
+    <script src="/static/assets/js/pages/room.js"></script>
+    <script src="/static/assets/js/pages/edit-room.js"></script>
+
+    
+
+    
+    
+{% endblock javascripts %}
