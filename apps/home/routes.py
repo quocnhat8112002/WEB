@@ -304,14 +304,27 @@ def get_latest_device_state():
 @blueprint.route('/device-state', methods=['POST'])
 def add_device_state():
     data = request.get_json()
-    print(data)
-    device_id=data['device_id'] 
+    device_id=data['id'] 
     time_stamp= datetime.now()
-    resource = data.get('resource' ,"")
-    value =data.get('value' ,"")
-    device_state = DeviceState(device_id=device_id, time_stamp=time_stamp ,resource=resource ,value=value )
-    device_state.save()
-    return jsonify(data, 200)
+    device_states = []
+
+    # Kiểm tra từng trường hợp và thêm vào danh sách trạng thái
+    if 'pir' in data:
+        device_states.append(DeviceState(device_id=device_id, time_stamp=time_stamp, resource='pir', value=data['pir']))
+
+    if 'temp' in data:
+        device_states.append(DeviceState(device_id=device_id, time_stamp=time_stamp, resource='temp', value=data['temp']))
+
+    if 'humi' in data:
+        device_states.append(DeviceState(device_id=device_id, time_stamp=time_stamp, resource='humi', value=data['humi']))
+    print("da tach duoc du lieu")
+    # Lưu từng trạng thái vào cơ sở dữ liệu
+    for device_state in device_states:
+        db.session.add(device_state)
+
+    db.session.commit()
+    return jsonify({'message': 'DeviceState add successfully'})
+
 
 @blueprint.route('/device-state/list', methods=['GET'])
 def get_all_device_state():

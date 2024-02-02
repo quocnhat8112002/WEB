@@ -73,6 +73,28 @@ socket.on('data', function(data) {
     // console.log(data);
     dataToShow = data;
     showData(dataToShow);
+    fetch('/device-state', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        // Kiểm tra xem có lỗi không
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        // Chuyển đổi dữ liệu JSON
+        return response.json();
+    })
+    .then(data => {
+        // Xử lý kết quả từ server (nếu cần)
+        console.log('API Response:', data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 });
 
 function showData(data) {

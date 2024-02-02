@@ -2,10 +2,9 @@ from flask_socketio import SocketIO
 from paho.mqtt import client as mqtt_client
 import json
 import random
-from flask import app
-from datetime import datetime
+from flask import Flask
+socketio = SocketIO( Flask(__name__) ,cors_allowed_origins='*', logger=True)
 
-socketio = SocketIO( app ,cors_allowed_origins='*', logger=True)
 
 @socketio.on('connect')
 def connect_event():
@@ -35,18 +34,8 @@ def mqtt_subscribe(client: mqtt_client):
         data = json.loads(str(msg.payload.decode()))
         print(topic)
         print(data)
-        # Đưa dữ liệu vào hàng đợi
-        with app.app_context():
-            data_callback(data)
-        # TODO: 
-        # Lấy dl mới nhất từ db lên lưu vào latest_data
-        # latest_data = {
-        #     'id_room': '1',
-        #     'temp': 40,
-        #     'humi': 100
-        # }
+        
         #đẩy dữ liệu lên front end qua 
-        # socketio.emit('data', latest_data)
         socketio.emit('data', data)
 
     client.subscribe('rems/telemetry/dev/#')
@@ -58,32 +47,3 @@ def events_init(broker):
     client.loop_start()
 
 
-#######################################################
-def data_callback(data):
-    print("da goi dc ham")
-    #  luu db 
-    with app.app_context():
-        from apps.home.model import DeviceState
-        from apps import db
-        device_id=data['id'] 
-        time_stamp= datetime.now()
-        device_states = []
-
-        # Kiểm tra từng trường hợp và thêm vào danh sách trạng thái
-        if 'pir' in data:
-            device_states.append(DeviceState(device_id=device_id, time_stamp=time_stamp, resource='pir', value=data['pir']))
-
-        if 'temp' in data:
-            device_states.append(DeviceState(device_id=device_id, time_stamp=time_stamp, resource='temp', value=data['temp']))
-
-        if 'humi' in data:
-            device_states.append(DeviceState(device_id=device_id, time_stamp=time_stamp, resource='humi', value=data['humi']))
-        print("da tach duoc du lieu")
-        # Lưu từng trạng thái vào cơ sở dữ liệu
-        for device_state in device_states:
-            db.session.add(device_state)
-
-        db.session.commit()
-        #  day len FE de show man hinh
-            
-   
