@@ -1,4 +1,50 @@
+function convertStatus(value) {
+    return value === "0" ? 'Off' : 'On';
+}
 $(window).ready(function(){
+    getData();
+});
+
+const socket = io();
+//Tạo một đối tượng socket sử dụng Socket.IO để kết nối với máy chủ.
+socket.on('connect', function(data) {
+    // Khi kết nối Socket.IO được thiết lập thành công, sự kiện 'connect' sẽ được kích hoạt.
+    // Trong trường hợp này, một hàm callback được gọi và in ra một thông báo
+    console.log('I am connected!!!');
+});
+
+
+socket.on('data', function(data) {
+    // Lắng nghe sự kiện 'data'. Khi server gửi dữ liệu với sự kiện này, hàm callback được kích hoạt.
+    getData();
+    
+});
+
+
+function updateData(data){
+    console.log("du lieu moi nhat la:")
+    console.log(data)
+     // Xử lý kết quả và hiển thị lên bảng
+     const tbody = document.querySelector('#root tbody');
+     tbody.innerHTML = '';
+     const defaultRow1 = document.createElement('tr');
+    defaultRow1.innerHTML = `
+        <td>0</td>
+        <td>Điều hòa</td>
+        <td><button id="button-1" data-id="${data[0].id}" data-switch-id="1" data-value="${data[0].value}" onclick="toggleSwitch(this)">${convertStatus(data[0].value)}</button></td>
+    `;
+    tbody.appendChild(defaultRow1);
+
+    const defaultRow2 = document.createElement('tr');
+    defaultRow2.innerHTML = `
+        <td>1</td>
+        <td>Các thiết bị khác</td>
+        <td><button id="button-2" data-id="${data[1].id}" data-switch-id="2" data-value="${data[1].value}" onclick="toggleSwitch(this)">${convertStatus(data[1].value)}</button></td>
+    `;
+    tbody.appendChild(defaultRow2);
+}
+
+function getData(){
     const urlParams = new URLSearchParams(window.location.search);
     const room_id = urlParams.get('room_id');
     fetch(`/device/${room_id}/get_by_type`)
@@ -11,98 +57,28 @@ $(window).ready(function(){
             return response.json();
         })
         .then( data => {
-             // Xử lý kết quả và hiển thị lên bảng
-             const tbody = document.querySelector('#root tbody');
-             tbody.innerHTML = '';
-
-             data.forEach(device => {
-                 const row = document.createElement('tr');
-                 row.innerHTML = `
-                     <td>${device.id}</td>
-                     <td>${device.name}</td>
-                 `;
-                 tbody.appendChild(row);
-             });
+            console.log(data)
+            updateData(data)
         })
         .catch(error => console.error('Error:', error));
-});
-// $(window).ready(function() {
-//     const urlParams = new URLSearchParams(window.location.search);
-//     const room_id = urlParams.get('room_id');
-//     // gửi lệnh get  api lấy thông tin mới nhất của device(quạt ,..) trong csdl 
-//     fetch('/latest_device_state')
-//         .then(response => {
-//             // Kiểm tra xem có lỗi không
-//             if (!response.ok) {
-//                 throw new Error(`HTTP error! Status: ${response.status}`);
-//             }
-//             // Chuyển đổi dữ liệu JSON
-//             return response.json();
-//         })
-//         .then(data => {
-//             // Hiển thị dữ liệu JSON trên console
-//             console.log('API Response:', data);
-//             //TOFO: render ra table
-//             // table html
-//         })
-//         .catch(error => {
-//             console.error('Error:', error);
-//         });
+}
 
-//     // gán dataToShow = dữ liệu vừa lấy đc
-//     dataToShow = data;
-
-//     //  dong code de show man hinh
-//     showData(dataToShow);
-//     console.log("ID la:" + room_id)
-// });
-
-const socket = io();
-//Tạo một đối tượng socket sử dụng Socket.IO để kết nối với máy chủ.
-socket.on('connect', function(data) {
-    // Khi kết nối Socket.IO được thiết lập thành công, sự kiện 'connect' sẽ được kích hoạt.
-    // Trong trường hợp này, một hàm callback được gọi và in ra một thông báo
-    console.log('I am connected!!!');
-  });
-
-
-socket.on('data', function(data) {
-    // Lắng nghe sự kiện 'data'. Khi server gửi dữ liệu với sự kiện này, hàm callback được kích hoạt.
-    // Dữ liệu được nhận từ server được gán vào biến dataToShow.
-    // Hàm showData(dataToShow) sau đó được gọi để xử lý và hiển thị dữ liệu mới lên trang web.
-    // console.log(data);
-    dataToShow = data;
-    showData(dataToShow);
-    fetch('/device-state', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => {
-        // Kiểm tra xem có lỗi không
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        // Chuyển đổi dữ liệu JSON
-        return response.json();
-    })
-    .then(data => {
-        // Xử lý kết quả từ server (nếu cần)
-        console.log('API Response:', data);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-});
-
-function showData(data) {
+function toggleSwitch(button) {
+    const id = button.dataset.id;
+    const switchId = button.dataset.switchId;
+    let value = button.dataset.value;
+    // Thay đổi giá trị từ "1" thành "0" và ngược lại
+    value = (value === "1") ? 0 : 1;    
+    console.log(switchId)
+    console.log(value)
+    console.log(id)
+    // Gửi yêu cầu đến server thông qua Socket.IO
+    const data = {
+        'id': id,
+        [`sw${switchId}`]: value
+    };
     console.log(data)
-    // id = data['id_room'];
-    // temp = data['temp'];
-    // // hien thi ra man hinj
-    // document.getElementById('id_room').value = id;
-
+    socket.emit('client_request', data);    
     
+
 }

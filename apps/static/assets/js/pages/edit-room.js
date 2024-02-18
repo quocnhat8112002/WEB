@@ -1,7 +1,6 @@
 $(window).ready(function() {
     // gửi lệnh get  api lấy thông tin của phòng
-// 
-    document.getElementById('editName').value = 'phkafha';
+    // document.getElementById('editName').value = 'phkafha';
 });
 
 function updateRoom() {

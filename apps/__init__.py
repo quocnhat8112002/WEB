@@ -60,5 +60,5 @@ def create_app(config):
     register_blueprints(app)
     configure_database(app)
     socketio.init_app(app)
-    events_init('broker.emqx.io')
+    events_init('broker.emqx.io' )
     return app

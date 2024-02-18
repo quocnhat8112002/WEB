@@ -1,31 +1,6 @@
 
-function ListRoom(){
-    console.log("abchahd");
-    // ajax get api
-    // console.log ket qua ra man hinh
-    fetch('/room/list')
-        .then(response => {
-            // Kiểm tra xem có lỗi không
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            // Chuyển đổi dữ liệu JSON
-            return response.json();
-        })
-        .then(data => {
-            // Hiển thị dữ liệu JSON trên console
-            console.log('API Response:', data);
-            //TOFO: render ra table
-            // table html
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-}
 
-// add room
 function addRoom() {
-    console.log("addroom")
     // Lấy giá trị từ các trường nhập liệu
     var name = document.getElementById('name').value.trim();
     var description = document.getElementById('description').value;
@@ -42,11 +17,9 @@ function addRoom() {
             body: formData
         })
         .then(response => {
-            // Kiểm tra xem có lỗi không
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
-            // Chuyển đổi dữ liệu JSON
             return response.json();
         })
         .then(data => {
@@ -57,11 +30,9 @@ function addRoom() {
         .catch(error => {
             console.error('Error:', error);
         });
-
     } else {
         alert('Please enter a room name.');
     }
     
 }
-
 

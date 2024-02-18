@@ -74,11 +74,13 @@
                                                 </thead>
                                                 <tbody>
                                                     {% for room in room_list %}
+                                                    
                                                     <tr>
                                                         <td>{{ room.id }}</td>
                                                         <td>{{ room.name }}</td>
                                                         <td>{{ room.description }}</td>
-                                                        <td>{{ room.description }}</td>
+                                                        <!-- show trạng thái mới nhất của phong -->                                                      
+                                                        <td id="latest-status-{{ room.id }}"></td>
                                                         <!-- show bang dieu khien phong -->
                                                         <td>
                                                             <a href="{{ url_for('home_blueprint.route_template', template='room_control.html', room_id=room.id) }}"  class="nav-item nav-link room-control" >
@@ -176,6 +178,8 @@
             sales_completed.innerHTML = data['sales-completed'];
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+
     <!-- Apex Chart -->
     <script src="/static/assets/js/plugins/apexcharts.min.js"></script>
 
@@ -183,6 +187,8 @@
     <script src="/static/assets/js/pages/dashboard-main.js"></script>
     <script src="/static/assets/js/pages/room.js"></script>
     <script src="/static/assets/js/pages/edit-room.js"></script>
+    <script src="/static/assets/js/pages/index-showData.js"></script>
+
 
     
 
