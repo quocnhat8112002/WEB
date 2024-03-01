@@ -5,6 +5,11 @@ import random
 from flask import Flask
 
 socketio = SocketIO( Flask(__name__) ,cors_allowed_origins='*', logger=True)
+client_id = f'rems-mqtt-{random.randint(0, 1000)}'
+    # username = 'emqx'
+    # password = 'public'
+    
+client = mqtt_client.Client(client_id)
 
 #kích hoạt khi một client kết nối thành công với server
 @socketio.on('connect')
@@ -14,6 +19,7 @@ def connect_event():
 # tạo một kết nối MQTT tới broker được chỉ định và thiết lập các xử lý sự kiện khi kết nối được thiết lập (hoặc thất bại). 
 # Nó trả về một đối tượng mqtt_client.
 def mqtt_connect(broker):
+    global client
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -22,11 +28,7 @@ def mqtt_connect(broker):
 
     port = 1883
     #Tạo một client ID động để đảm bảo tính duy nhất khi kết nối với MQTT broker.
-    client_id = f'rems-mqtt-{random.randint(0, 1000)}'
-    # username = 'emqx'
-    # password = 'public'
     
-    client = mqtt_client.Client(client_id)
     # client.username_pw_set(username, password)
     client.on_connect = on_connect
     client.connect(broker, port)
@@ -38,23 +40,28 @@ def mqtt_subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         topic = msg.topic
         data = json.loads(str(msg.payload.decode()))
-        print(topic)
-        #Lưu dl mới nhất vào db
-        import requests
-        # Gọi API /device-state
-        api_url = 'http://127.0.0.1:5000/device-state'
-        headers = {'Content-Type': 'application/json'}
-        # Thực hiện yêu cầu POST
-        response = requests.post(api_url, json=data, headers=headers)
-        # Kiểm tra trạng thái của yêu cầu
-        if response.status_code == 200:
-            print('API request successful')
+        #kiểm tra topic và chia hướng xử lí
+        #Topic này xử lí khi nhận dữ liệu từ esp
+        if topic == 'rems/telemetry/dev/#':
+            print(topic)
+            post_api(data)
             #đẩy dữ liệu lên front end qua 
             socketio.emit('data', data)
-        else:
-            print(f'API request failed with status code {response.status_code}')
+
+        #TOPIC này xử lí khi nhận dữ liệu phản hồi từ esp
+        if topic == 'rems/respone/dev':
+            print(topic)
+            fb_value = data.get('fb')
+            # Kiểm tra giá trị và thực hiện xử lý
+            if fb_value == "0":
+                post_api(data)
+                socketio.emit('respone' ,data)
+            else :
+                socketio.emit('respone' ,data)
     # nhận tất cả các tin nhắn trên chủ đề con
     client.subscribe('rems/telemetry/dev/#')
+    client.subscribe('rems/respone/dev/#')
+    
     # Đặt hàm callback on_message cho sự kiện nhận tin nhắn.
     client.on_message = on_message
 
@@ -64,19 +71,16 @@ def events_init(broker):
     mqtt_subscribe(client)
     client.loop_start()
 
-@socketio.on('client_request')
-def sendRequest(data):
-    
-    print("da gửi đến esp")
-    print(data)
-    # id = data.get('id')
-    # switchId = data.get('switchId')
-    # value = data.get('value')    
-    # # Xử lý yêu cầu từ client và gửi phản hồi
-    # # Gửi thông điệp tới ESP8266 qua MQTT 
-    # mqtt_command = {"id": id, f"sw{switchId}": (value)}
-    # mqtt_client.publish('rems/telemetry/dev/#', json.dumps(mqtt_command))
-    #cần thêm điều kiện là esp8266 phải phản hồi thì mới đẩy lên data
-    print("da gửi đến esp")
-    socketio.emit('server_response', {'response': 'Request processed successfully'})
-
+def post_api(data):
+    #Lưu dl mới nhất vào db
+    import requests
+    # Gọi API /device-state
+    api_url = 'http://127.0.0.1:5000/device-state'
+    headers = {'Content-Type': 'application/json'}
+    # Thực hiện yêu cầu POST
+    response = requests.post(api_url, json=data, headers=headers)
+    # Kiểm tra trạng thái của yêu cầu
+    if response.status_code == 200:
+        print('API request successful')
+    else:
+        print(f'API request failed with status code {response.status_code}')

@@ -13,6 +13,7 @@ from apps.home.model import Sales ,Room ,Device ,DeviceState
 from flask_socketio import emit
 from sqlalchemy.sql import func ,desc
 from apps import db
+from apps.events import client
 from datetime import datetime
 
 
@@ -289,8 +290,8 @@ def delete_device_by_id(device_id):
 #################################################################################
 #Thực hiện truy vấn bảng DeviceState lấy trạng thái mới nhất của 
 # tất cả các thiết bị của các phòng có type là dữ liệu nhập vào
-@blueprint.route('/latest_device_state/<string:type>', methods=['GET'])
-def get_latest_device_state(type):
+@blueprint.route('/latest_device_state/<int:room_id>/<string:type>', methods=['GET'])
+def get_device_state(room_id , type):
     subquery = db.session.query(
         DeviceState.device_id,
         DeviceState.resource,
@@ -319,7 +320,7 @@ def get_latest_device_state(type):
     ).join(
         Room,
             Device.room_id == Room.id
-    )
+    ).filter(Device.room_id == room_id) 
     results = query.all()
 
     device_states = []
@@ -344,7 +345,7 @@ def add_device_state():
 
     # Kiểm tra từng trường hợp và thêm vào danh sách trạng thái
     # Tạo danh sách từ điển từ dữ liệu
-    for resource in ['pir', 'temp', 'humi', 'sw1', 'sw2']:
+    for resource in ['pir', 'temp', 'humi', 'sw1', 'sw2' , 'e']:
         if resource in data:
             device_states.append({
                 'device_id': device_id,
@@ -402,5 +403,99 @@ def delete_device_state_by_id(device_state_id):
         return "Device State Deleted"
     else:
         return jsonify({'error': 'Device State not found'}), 404
+#Tìm tất cả giá trị theo room_id và type nhập vào
+@blueprint.route('/device_state/<int:room_id>/<string:type>', methods=['GET'])
+def get_all_device_states(room_id, type):
+    query = db.session.query(
+        Device,
+        DeviceState.time_stamp,
+        DeviceState.resource,
+        DeviceState.value,
+        Room.name.label('room_name'),
+        Device.room_id,
+        Device.name.label('device_name')
+    ).select_from(Device) \
+    .join(
+        DeviceState,
+        Device.id == DeviceState.device_id
+    ).join(
+        Room,
+        Device.room_id == Room.id
+    ).filter(
+        (Device.room_id == room_id) &
+        (Device.type == type)
+    )
+    
+    results = query.all()
 
+    device_states = []
+    for device, time_stamp, resource, value, room_name, room_id, device_name in results:
+        device_states.append({
+            'device_id': device.id,
+            'room_id': room_id,
+            'room_name': room_name,
+            'device_name': device_name,
+            'time_stamp': time_stamp,
+            'resource': resource,
+            'value': value
+        })
+
+    return jsonify({'device_states': device_states})
+
+#Tìm trạng thái chung mới nhất của từng phòng
+
+@blueprint.route('/latest_deviceState/<string:type>', methods=['GET'])
+def get_latest_device_state(type):
+    subquery = db.session.query(
+        DeviceState.device_id,
+        DeviceState.resource,
+        func.max(DeviceState.time_stamp).label('latest_time_stamp')
+    ).join(Device).filter(Device.type == type).group_by(DeviceState.device_id, DeviceState.resource).subquery()
+
+    query = db.session.query(
+        Device,
+        DeviceState.time_stamp,
+        DeviceState.resource,
+        DeviceState.value,
+        Room.name.label('room_name'),
+        Device.room_id,
+        Device.name.label('device_name')
+    ).select_from(Device) \
+    .join(
+        subquery,
+            (Device.id == subquery.c.device_id)&
+            (DeviceState.resource == subquery.c.resource)&
+            (DeviceState.time_stamp == subquery.c.latest_time_stamp)
+    ).join(
+        DeviceState,
+            (Device.id == DeviceState.device_id)&
+            (DeviceState.resource == subquery.c.resource)&
+            (DeviceState.time_stamp == subquery.c.latest_time_stamp)
+    ).join(
+        Room,
+            Device.room_id == Room.id
+    )
+    results = query.all()
+
+    device_states = []
+    for device, time_stamp, resource, value, room_name, room_id ,device_name in results:
+        device_states.append({
+            'device_id': device.id,
+            'room_id': room_id,
+            'room_name': room_name,
+            'device_name': device_name,
+            'time_stamp': time_stamp,
+            'resource': resource,
+            'value': value
+        })
+
+    return jsonify({'device_states': device_states})
+
+#### XU LY KHI CLIENT GUI LENH
+@blueprint.route('/request/esp', methods=['POST'])
+def request_esp():
+    data = request.get_json()
+    print(data)
+    client.publish("rems/request", payload=str(data))
+    return jsonify(data, 200)
 

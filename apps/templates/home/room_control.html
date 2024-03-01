@@ -3,12 +3,31 @@
 {% block title %}  Room Control {% endblock %} 
 
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+
+<style>
+    #unique-spinner-id {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: none;
+        margin-left: 10px; 
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
 
 	<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uuid/dist/umd/uuidv4.min.js"></script>
 
 
     <div class="pcoded-main-container">
@@ -52,7 +71,7 @@
                                     <a class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false"><i class="feather icon-file-text m-r-5"></i>Thông Số</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false"><i class="feather icon-mail m-r-5"></i> Mail</a>
+                                    <a class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false"><i class="feather icon-mail m-r-5"></i> Tra Cứu</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" id="pills-news-tab" data-bs-toggle="pill" href="#pills-news" role="tab" aria-controls="pills-news" aria-selected="false"><i class="feather icon-monitor m-r-5"></i> Newslatter</a>
@@ -75,7 +94,7 @@
                                                 </tr>
                                                 </thead>
                                                 <tbody>
-                                                   
+                                                    
                                                 </tbody>
                                             </table>
                                         </div>
@@ -83,29 +102,52 @@
                                 </div>
                                 <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
                                     <div class="table-responsive">
-                                        <div class="customer-scroll1" style="height:362px;position:relative;">
+                                        <div class="customer-scroll1" id="parameter" style="height:362px;position:relative;">
                                             <table class="table table-hover m-b-0">
                                                 <thead>
-                                                    <tr>
-                                                        <th><span>ID</span></th>
-                                                        <th><span>Loại<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
-                                                        <th><span>Giá Trị<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
-                
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        
-                                                        <!-- Dữ liệu bảng -->
-                                                    </tbody>
+                                                <tr>
+                                                    <th><span>Điện Năng Tiêu Thụ</span></th>
+                                                    <th><span>Nhiệt Độ<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                    <th><span>Độ Ẩm<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+            
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    
+                                                    <!-- Dữ liệu bảng -->
+                                                </tbody>
                                             </table>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
                                     <div class="table-responsive">
-                                        <div class="customer-scroll2" style="height:362px;position:relative;">
+                                        <div class="customer-scroll2" id="thongtin" style="height:362px;position:relative;">
                                             <table class="table table-hover m-b-0">
-                                                
+                                                <thead>
+                                                    <center>
+                                                        <form id="myForm">
+                                                            <select id="thongso" name="thongso">
+                                                                <option value="sensor">Sensor</option>
+                                                                <option value="device">Device</option>
+                                                                <option value="controller">Controller</option>
+                                                            </select>
+                                                            <input type="submit" >
+                                                        </form>
+                                                    </center>
+                                                <tr>
+                                                    <th><span>DEVICE ID</span></th>
+                                                    <th><span>TÊN</span></th>
+                                                    <th><span>LOẠI TÀI NGUYÊN</span></th>
+                                                    <th><span>GIÁ TRỊ</span></th>
+                                                    <th><span>THỜI GIAN</span></th>
+            
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    
+                                                    <!-- Dữ liệu bảng -->
+                                                </tbody>
                                             </table>
                                         </div>
                                     </div>
@@ -138,9 +180,6 @@
 {% block javascripts %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
     
-
 	<script src="/static/assets/js/pages/device-state.js"></script>
-	<script src="/static/assets/js/pages/toggleSwitch.js"></script>
-
 
 {% endblock javascripts %}

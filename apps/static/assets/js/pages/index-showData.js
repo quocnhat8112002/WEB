@@ -45,7 +45,7 @@ function updateLatestStatus(data) {
 
 function getData(){
     const type = "controller"
-    fetch(`/latest_device_state/${type}`)
+    fetch(`/latest_deviceState/${type}`)
         .then(response => {
             // Kiểm tra xem có lỗi không
             if (!response.ok) {
