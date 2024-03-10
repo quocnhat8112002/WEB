@@ -75,12 +75,19 @@ def post_api(data):
     #Lưu dl mới nhất vào db
     import requests
     # Gọi API /device-state
-    api_url = 'http://127.0.0.1:5000/device-state'
+    api_url1 = 'http://127.0.0.1:5000/device-state'
     headers = {'Content-Type': 'application/json'}
     # Thực hiện yêu cầu POST
-    response = requests.post(api_url, json=data, headers=headers)
+    response1 = requests.post(api_url1, json=data, headers=headers)
     # Kiểm tra trạng thái của yêu cầu
-    if response.status_code == 200:
+    if response1.status_code == 200:
         print('API request successful')
+        if "pir" in data or "temp" in data or "i" in data:
+            api_url2 = 'http://127.0.0.1:5000/room_status'
+            response2 = requests.put(api_url2, json=data, headers=headers)
+            if response2.status_code == 200:
+                print('Update room status successful')
+            else :
+                print(f'API request failed with status code {response2.status_code}')
     else:
-        print(f'API request failed with status code {response.status_code}')
+        print(f'API request failed with status code {response1.status_code}')

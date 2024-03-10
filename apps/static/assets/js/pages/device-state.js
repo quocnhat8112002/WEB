@@ -55,7 +55,7 @@ function updateData1(data){
     const defaultRow2 = document.createElement('tr');
     defaultRow2.innerHTML = `
         <td>1</td>
-        <td>Các thiết bị khác</td>
+        <td>Quạt - Máy chiếu</td>
         <td><button id="button-2" data-id="${data[1].id}" data-switch-id="2" data-value="${data[1].value}" onclick="toggleSwitch(this)">${convertStatus(data[1].value)}</button></td>
     `;
     tbody.appendChild(defaultRow2);

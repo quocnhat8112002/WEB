@@ -1,0 +1,64 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} edit action {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+	<!-- [ Main Content ] start -->
+	<div class="pcoded-main-container">
+		<div class="pcoded-content">
+			<!-- [ breadcrumb ] start -->
+			<div class="page-header">
+				<div class="page-block">
+					<div class="row align-items-center">
+						<div class="col-md-12">
+							<div class="page-header-title">
+								<h5 class="m-b-10">Edit Action</h5>
+							</div>
+							<ul class="breadcrumb">
+								<li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+								<li class="breadcrumb-item"><a href="#">Edit Action {{id}}</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div className="container">
+                <form action="/submit_form" id="edit_rule_action" method="post">
+                    
+                    <label for="device">Thiết bị cần hành động:</label><br>
+                    <select id="device" name="device" required>
+                        <!-- <option value="1">Bật</option> -->
+                        <option value="sw">Tất cả công tắc</option>
+                    </select>                  
+                    <br>
+                
+                    <label for="value_action">Hành động:</label><br>
+                    <select id="value_action" name="value_action" required>
+                        <!-- <option value="1">Bật</option> -->
+                        <option value="0">Tắt</option>
+                        <option value="1">Bật</option>
+                    </select>                
+                    <br>
+                    <br>
+                
+                    <input type="submit" value="Lưu">
+                
+            </div>
+    
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+	<script src="/static/assets/js/pages/edit_action.js"></script>
+    
+{% endblock javascripts %}

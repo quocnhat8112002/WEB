@@ -1,0 +1,71 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Add Rule {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+	<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    </form>
+    <!-- [ Main Content ] start -->
+	<div class="pcoded-main-container">
+		<div class="pcoded-content">
+			<!-- [ breadcrumb ] start -->
+			<div class="page-header">
+				<div class="page-block">
+					<div class="row align-items-center">
+						<div class="col-md-12">
+							<div class="page-header-title">
+								<h5 class="m-b-10">Lập lịch</h5>
+							</div>
+							<ul class="breadcrumb">
+								<li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+								<li class="breadcrumb-item"><a href="#">Thêm lịch mới</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+            <div className="container">
+                <form action="/submit_form" id="add_rule_condition" method="post">
+                
+                    <label for="resource">Loại điều kiện:</label><br>
+                    <select id="resource" name="resource" required>
+                        <option value="pir">PIR</option>
+                        <option value="i">I(dòng điện)</option>
+                    </select>                    
+                    <br>
+                    <br>
+                
+                    <label for="condition">Điều kiện:</label><br>
+                    <select id="condition" name="condition" required>
+                        <option value="1">Lớn hơn</option>
+                        <option value="2">Nhỏ hơn</option>
+                        <option value="0">Bằng</option>
+                    </select>
+                    
+                    <br>
+                    <br>
+                    
+                    <label for="value_condition">Giá trị điều kiện:</label><br>
+                    <input type="text" id="value_condition" name="value_condition" required>
+                    <br>
+                    <br>
+                
+                    <input type="submit" value="Tạo điều kiện kiểm tra">
+            </div>
+		</div>
+	</div>
+	<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+	<script src="/static/assets/js/pages/add_rule_condition.js"></script>
+
+{% endblock javascripts %}

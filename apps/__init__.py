@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from importlib import import_module
 
 from apps.events import socketio, events_init
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 db = SQLAlchemy()
@@ -52,6 +53,17 @@ def configure_database(app):
     def shutdown_session(exception=None):
         db.session.remove()
 
+    #gọi hàm thực hiện lịch
+    # register_scheduler_job(app)
+
+# Thêm hàm đăng ký công việc lên lịch
+def register_scheduler_job(app):
+    from .rule import scheduler ,check_conditions
+    # Đăng ký công việc kiểm tra mỗi 1 phút
+    scheduler.add_job(check_conditions, 'interval', minutes=0.2)
+    # seconds=0.1
+    # Bắt đầu lịch
+    scheduler.start()
 
 def create_app(config):
     app = Flask(__name__)

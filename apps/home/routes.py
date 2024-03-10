@@ -4,17 +4,19 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from operator import and_
+
+import requests
 from apps.home import blueprint
 from flask import render_template, request, jsonify ,redirect ,url_for
 from flask_login import login_required
 from jinja2 import TemplateNotFound
 
-from apps.home.model import Sales ,Room ,Device ,DeviceState
+from apps.home.model import Sales ,Room ,Device ,DeviceState ,RoomStatus ,RuleCondition ,RuleAction
 from flask_socketio import emit
 from sqlalchemy.sql import func ,desc
 from apps import db
 from apps.events import client
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @blueprint.route('/index', methods=['GET'])
@@ -30,7 +32,13 @@ def index():
     
     return render_template('home/index.html', segment='index', sales=sales ,room_list=room_list)
 
+@blueprint.route('/edit_condition/<int:id>')
+def render_condition(id):
+    return render_template('home/edit_condition.html', id=id)
 
+@blueprint.route('/edit_action/<int:id>')
+def render_action(id):
+    return render_template('home/edit_action.html', id=id)
 
 @blueprint.route('/<template>')
 @login_required
@@ -57,7 +65,6 @@ def route_template(template):
 @login_required
 def edit_room(room_id):
     # Thực hiện các thao tác cần thiết để lấy thông tin phòng với room_id từ cơ sở dữ liệu
-
     # Chuyển thông tin phòng tới trang chỉnh sửa
     return render_template("home/edit_room.html", room_id=room_id)
 
@@ -74,19 +81,13 @@ def room_control():
 
 # Helper - Extract current page name from request
 def get_segment(request):
-
     try:
-
         segment = request.path.split('/')[-1]
-
         if segment == '':
             segment = 'index'
-
         return segment
-
     except:
         return None
-
 
 @blueprint.route('/sales', methods=['POST'])
 def add_sale():
@@ -117,11 +118,8 @@ def get_room_by_id(room_id):
     else:
         return jsonify({'error': 'Room not found'}), 404
 
-
-
 @blueprint.route('/edit_room/<int:room_id>', methods=['PUT'])
 @login_required
-
 def update_room_by_id(room_id):
     room = Room.query.get(room_id)
     if not room:
@@ -176,13 +174,10 @@ def get_devices(room_id):
             'value': device_state_sw2.value if device_state_sw2 else None,
             'resource': 'sw2',
         })
-
     return jsonify(device_list)
-
 
 @blueprint.route('/device', methods=['POST'])
 def add_device():
-    print("acb")
     data = request.get_json()
     print(data)
     id = data['id']
@@ -193,13 +188,9 @@ def add_device():
     create_time= datetime.now()
     update_time = datetime.now()
     info = data.get('info', "")
-    # if 'name' in data:
-    #     device['name'] = data['name']
     device = Device(id= id ,room_id=room_id, name=name, type=type, description=description ,update_time=update_time ,create_time=create_time, info=info)
     device.save()
     return jsonify(data, 200)
-
-
 
 @blueprint.route('/add_device.html', methods=['GET'])
 @login_required
@@ -209,9 +200,7 @@ def get_room_id():
         # Xử lý khi có giá trị room_id
         return render_template('home/add_device.html', room_id=room_id)
     else:
-        # Xử lý khi không có giá trị room_id
         return "Missing room_id parameter."
-
 
 @blueprint.route('/device/list', methods=['GET'])
 def get_all_device():
@@ -250,7 +239,6 @@ def get_device_by_room_and_type(room_id, type):
     else:
         return jsonify({'error': 'Devices not found for the specified room_id and type'}), 404
 
-    
 @blueprint.route('/device/<string:device_id>', methods=['PUT'])
 def update_device_by_id(device_id):
     device = Device.query.get(device_id)
@@ -342,10 +330,9 @@ def add_device_state():
     data = request.get_json()
     device_id=data['id'] 
     device_states = []
-
     # Kiểm tra từng trường hợp và thêm vào danh sách trạng thái
     # Tạo danh sách từ điển từ dữ liệu
-    for resource in ['pir', 'temp', 'humi', 'sw1', 'sw2' , 'e']:
+    for resource in ['pir', 'temp', 'humi', 'sw1', 'sw2' , 'e' , 'i']:
         if resource in data:
             device_states.append({
                 'device_id': device_id,
@@ -353,13 +340,11 @@ def add_device_state():
                 'resource': resource,
                 'value': data[resource],
             })
-
     # Lưu từng trạng thái vào cơ sở dữ liệu
     for device_state_data in device_states:
         db.session.add(DeviceState(**device_state_data))
 
     db.session.commit()
-
     # Trả về JSON
     return jsonify(device_states=device_states)
 
@@ -377,22 +362,6 @@ def get_device_state_by_id(device_state_id):
     else:
         return jsonify({'error': 'Room not found'}), 404
     
-# @blueprint.route('/device-state/<int:device_state_id>', methods=['PUT'])
-# def update_device_state_by_id(device_state_id):
-#     device = DeviceState.query.get(device_state_id)
-#     if not device:
-#         return jsonify({'error': 'Device not found'}), 404
-#     else:
-#         data = request.get_json()
-#         print(data)
-#         device.room_id=data['room_id'] 
-#         device.name=data['name']
-#         device.type=data['type']
-#         device.description=data['description']
-#         device.update_time = datetime.now()
-#         device.info = data['info']
-#         device.save()
-#         return jsonify({'message': 'Device updated successfully'})
     
 @blueprint.route('/device-state/<int:device_state_id>', methods=['DELETE'])
 def delete_device_state_by_id(device_state_id):
@@ -425,7 +394,6 @@ def get_all_device_states(room_id, type):
         (Device.room_id == room_id) &
         (Device.type == type)
     )
-    
     results = query.all()
 
     device_states = []
@@ -439,11 +407,9 @@ def get_all_device_states(room_id, type):
             'resource': resource,
             'value': value
         })
-
     return jsonify({'device_states': device_states})
 
 #Tìm trạng thái chung mới nhất của từng phòng
-
 @blueprint.route('/latest_deviceState/<string:type>', methods=['GET'])
 def get_latest_device_state(type):
     subquery = db.session.query(
@@ -496,6 +462,217 @@ def get_latest_device_state(type):
 def request_esp():
     data = request.get_json()
     print(data)
-    client.publish("rems/request", payload=str(data))
+    client.publish("rems/client/request", payload=str(data))
     return jsonify(data, 200)
+
+##########  ROOM STATUS   ############################
+#Thêm trạng thái vào phòng
+@blueprint.route('/room_status', methods=['POST'])
+def add_status():
+    data = request.get_json()
+    room_id = data['room_id'] 
+    time_stamp = datetime.now()
+    resource = data['resource'] 
+    value = data['value']
+    roomStatus = RoomStatus(room_id=room_id,  time_stamp = time_stamp, resource= resource ,value= value)
+    roomStatus.save()
+    return jsonify(data, 200)
+
+#Cập nhật trạng thái mới của bảng
+@blueprint.route('/room_status', methods=['PUT'])
+def update_status_room():
+    data = request.get_json()
+    # Kiểm tra xem data có trường 'id' không
+    if 'id' not in data:
+        return jsonify({'error': 'Missing id in request data'}), 400
+    # Lấy room_id từ bảng Device dựa trên id trong request data
+    device_id = data['id']
+    device = Device.query.filter_by(id=device_id).first()
+    if not device:
+        return jsonify({'error': 'Device not found'}), 404
+    room_id = device.room_id
+    # Lấy giá trị từ các trường 'pir', 'temp', 'i' nếu có
+    pir_value = data.get('pir')
+    i_value = data.get('i')
+    # Gán trường và giá trị dựa trên trường tồn tại trong dữ liệu đầu vào
+    field = ""
+    value_field = ""
+    if pir_value is not None:
+        field = "pir"
+        value_field = pir_value
+    elif i_value is not None:
+        field = "i"
+        value_field = i_value
+    # Kiểm tra xem có trường nào tồn tại không và thực hiện gán giá trị
+    if field:
+        # Chiếu vào bảng RoomStatus và cập nhật giá trị
+        room_status_record = RoomStatus.query.filter_by(room_id=room_id, resource=field).first()
+
+        if room_status_record:
+            room_status_record.value = value_field
+            room_status_record.time_stamp = datetime.now()
+
+        # Lưu thay đổi vào database
+        db.session.commit()
+    return jsonify({'message': 'Data processed successfully'})
+
+####################### RULE CONDITION  ###########################
+@blueprint.route('/rule_condition', methods=['POST'])
+def add_condition():
+    data = request.get_json()
+    resource = data['resource'] 
+    condition = data['condition'] 
+    value = data['value']
+    ruleCondition = RuleCondition( resource= resource ,condition = condition ,value= value)
+    ruleCondition.save()
+    # Sử dụng thuộc tính returning để lấy ID sau khi thêm mới
+    db.session.refresh(ruleCondition)
+
+    # Trả về kết quả với ID
+    response_data = {
+        'id': ruleCondition.id,
+        'resource': ruleCondition.resource,
+        'condition': ruleCondition.condition,
+        'value': ruleCondition.value,
+    }
+    return jsonify(response_data)
+
+@blueprint.route('/rule_condition/<int:id>', methods=['PUT'])
+def update_rule_condition(id):
+    data = request.get_json()
+    # Kiểm tra xem có bản ghi nào có trường 'id' như người dùng đã nhập không
+    rule_condition = RuleCondition.query.get(id)
+    if rule_condition is None:
+        return jsonify({'error': f'RuleCondition with id {id} not found'}), 404
+
+    rule_condition.condition = data['condition']
+    rule_condition.value = data['value']
+    db.session.commit()
+    
+    return jsonify({'message': f'RuleCondition with id {id} updated successfully'}), 200
+
+@blueprint.route('/rule_condition', methods=['GET'])
+def get_all_condition():
+    conditions = RuleCondition.query.all()
+    list_conditions = [{'id': condition.id, 'resource': condition.resource ,'condition': condition.condition , 'value': condition.value  } for condition in conditions]
+    return jsonify(list_conditions)
+
+#######################  RULE ACTION  ##########################
+@blueprint.route('/rule_action', methods=['POST'])
+def add_action():
+    data = request.get_json()
+    id_rule = data['id_rule'] 
+    device = data['device'] 
+    value = data['value']
+    ruleAction = RuleAction( id_rule= id_rule ,device = device ,value= value)
+    ruleAction.save()
+    return jsonify(data, 200)
+
+@blueprint.route('/rule_action/<int:id>', methods=['PUT'])
+def update_rule_action(id):
+    data = request.get_json()
+    # Kiểm tra xem có bản ghi nào có trường 'id' như người dùng đã nhập không
+    rule_action = RuleAction.query.get(id)
+    if rule_action is None:
+        return jsonify({'error': f'RuleCondition with id {id} not found'}), 404
+
+    rule_action.device = data['device']
+    rule_action.value = data['value']
+    db.session.commit()
+    
+    return jsonify({'message': f'RuleCondition with id {id} updated successfully'}), 200
+
+@blueprint.route('/rule_action', methods=['GET'])
+def get_all_action():
+    actions = RuleAction.query.all()
+    list_actions = [{'id': action.id, 'id_rule': action.id_rule ,'device': action.device , 'value': action.value  } for action in actions]
+    return jsonify(list_actions)
+
+#### XU LY KHI RULE GUI LENH
+@blueprint.route('/rule/request', methods=['POST'])
+def rule_request():
+    data = request.get_json()
+    print(data)
+    # Khởi tạo mảng id_device chứa id của các thiết bị cần tắt
+    id_device = []
+    # Lặp qua từng giá trị trong mảng 'ids'
+    for room_id in data:
+        print(room_id)
+        # Tìm bản ghi trong bảng Device có room_id và type tương ứng
+        device_record = Device.query.filter_by(room_id=int(room_id), type='controller').first()
+
+        # Nếu bản ghi tồn tại, thêm id vào mảng id_device
+        if device_record:
+            id_device.append(device_record.id)
+
+    print("abcb")
+    client.publish("rems/rule/request", payload=str(id_device))
+    return jsonify( 200)
+
+@blueprint.route('/rule', methods=['POST'])
+def rule():
+    # Lấy thời điểm 10 phút trước
+    ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
+    # Lấy tất cả các bản ghi RoomStatus có trường resource='pir' và time_stamp <= ten_minutes_ago
+    pir_records = RoomStatus.query.filter(
+        RoomStatus.resource == 'pir',
+        RoomStatus.time_stamp <= ten_minutes_ago
+    ).all()
+    # Lưu danh sách room_id của những bản ghi có điều kiện
+    room_ids = []
+    for record in pir_records:
+        room_ids.append(record)
+
+    # Loại bỏ các room_id trùng lặp (nếu có)
+    room_ids = list(set(room_ids))
+
+    if room_ids :
+        # Lọc bảng RuleCondition để lấy ra bản ghi có trường resource = 'pir'
+        pir_conditions = RuleCondition.query.filter_by(resource='pir').first()
+        #Gán kiểu điều kiện     
+        value_condition = pir_conditions.condition
+        #Gía trị để thỏa mãn điều kiện
+        value = pir_conditions.value
+        id = pir_conditions.id
+        #Danh sách các phòng thỏa mãn condition
+        rooms = []
+        #Kiểm tra condition xem điều kiện là gì, 0 ở đây là = , 1 là >, 2 là <
+        if value_condition == "0":
+            for room_id in room_ids:
+            # Kiểm tra xem bản ghi có tồn tại và có thỏa mãn điều kiện trong RuleCondition không
+                if  room_id.value == value:
+                    # Thêm bản ghi vào danh sách rooms
+                    rooms.append(room_id)
+
+            #Tiếp tục tìm action thỏa mãn với id rule
+            actions = []
+            # Lặp qua danh sách các bản ghi trong bảng RuleAction
+            for action in RuleAction.query.filter_by(id_rule=id).all():
+                # Thêm bản ghi vào danh sách actions
+                actions.append(action)
+
+            # Kiểm tra xem danh sách actions có tồn tại hay không
+            if actions:
+                #lấy ra id của các phòng thỏa mãn điều kiện
+                ids = []
+                for room in rooms:
+                    ids.append(room.room_id)
+                
+                print(ids)
+                for rule_action in actions:
+                    if rule_action.device == "sw" and rule_action.value == "0" :
+                        # Gửi lệnh tắt tất cả các sw của các phòng trong ids
+                        data = ids
+                        api_url = 'http://127.0.0.1:5000/rule/request'
+                        headers = {'Content-Type': 'application/json'}
+                        # Thực hiện yêu cầu POST
+                        response = requests.post(api_url, json=data, headers=headers)
+                        if response.status_code == 200:
+                            print('Post api successful')
+                        else :
+                            print(f'API request failed with status code {response.status_code}')
+            else:
+                print("Danh sách actions không tồn tại.")
+    return ("da thuc hien router" )
+            
 

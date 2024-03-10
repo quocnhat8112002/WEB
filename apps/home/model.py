@@ -16,9 +16,6 @@ class Room(db.Model):
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
-            # depending on whether value is an iterable or not, we must
-            # unpack it's value (when **kwargs is request.form, some values
-            # will be a 1-element list)
             if hasattr(value, '__iter__') and not isinstance(value, str):
                 # the ,= unpack of a singleton fails PEP8 (travis flake8 test)
                 value = value[0]
@@ -79,10 +76,64 @@ class DeviceState(db.Model):
         db.session.add(self)
         db.session.commit()
 
+class RoomStatus(db.Model):
+    __tablename__ = 'RoomStatus'
+
+    id = db.Column(db.Integer ,primary_key = True)
+    room_id = db.Column(db.String(64), db.ForeignKey("Room.id") ,nullable = False)
+    time_stamp = db.Column(db.DateTime ,default = datetime.now)
+    resource = db.Column(db.String(64))
+    value = db.Column(db.String(64))
+    time_condition = db.Column(db.Integer)
+
+
+    def __init__(self , room_id ,time_stamp ,resource ,value , time_condition ):
+        self.room_id = room_id
+        self.time_stamp = time_stamp
+        self.resource = resource
+        self.value = value
+        self.time_condition = time_condition
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+class RuleCondition(db.Model):
+    __tablename__ = 'RuleCondition'
+
+    id = db.Column(db.Integer ,primary_key = True ,autoincrement=True )
+    resource = db.Column(db.String(64))
+    condition = db.Column(db.String(64))
+    value = db.Column(db.String(64))
+
+    def __init__(self  ,resource ,condition ,value ):
+        self.resource = resource
+        self.condition = condition
+        self.value = value
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+class RuleAction(db.Model):
+    __tablename__ = 'RuleAction'
+
+    id = db.Column(db.Integer ,primary_key = True ,autoincrement=True)
+    id_rule = db.Column(db.String(64), db.ForeignKey("RuleCondition.id") ,nullable = False)
+    device = db.Column(db.String(64))
+    value = db.Column(db.String(64))
+
+    def __init__(self , id_rule , device ,value ):
+        self.id_rule = id_rule
+        self.device = device
+        self.value = value
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()     
+
 class Sales(db.Model):
-
     __tablename__ = 'Sales'
-
     id = db.Column(db.Integer, primary_key=True)
     product = db.Column(db.String(64))
     amount = db.Column(db.String(64))
@@ -98,10 +149,8 @@ class Sales(db.Model):
                 value = value[0]
 
             setattr(self, key, value)
-
     def __repr__(self):
         return str(self.product)
-
     def save(self):
         db.session.add(self)
         db.session.commit()

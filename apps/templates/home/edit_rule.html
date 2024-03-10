@@ -1,0 +1,83 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Edit Rule {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<div class="pcoded-main-container">
+    <div class="pcoded-content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card table-card">
+                    <div class="card-header">
+                        <ul class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/"><i class="feather icon-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="#">Edit Rule</a></li>
+                        </ul>
+                        
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="tab-content" id="pills-tabContent">
+                            <!-- Rule condition -->
+                            <h2>Điều kiện</h2>
+                            <div class="tab-pane fade show active" id="pills-condition" role="tabpanel" aria-labelledby="pills-home-tab">
+                                <div class="table-responsive">
+                                    <div class="customer-scroll1" id="edit_condition" style="height:362px;position:relative;">
+                                        <table class="table table-hover m-b-0">
+                                            <thead>
+                                            <tr>
+                                                <th><span>ID</span></th>
+                                                <th><span>Loại tài nguyên kiểm tra<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                <th><span>Điều kiện<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                <th><span>Gía trị kiểm tra</span></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                                
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <h2>Hành động</h2>
+                            <!-- Rule action -->
+                            <div class="tab-pane fade show active" id="pills-condition" role="tabpanel" aria-labelledby="pills-home-tab">
+                                <div class="table-responsive">
+                                    <div class="customer-scroll1" id="edit_action" style="height:362px;position:relative;">
+                                        <table class="table table-hover m-b-0">
+                                            <thead>
+                                            <tr>
+                                                <th><span>ID</span></th>
+                                                <th><span>ID điều kiện<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                <th><span>Thiết bị hành động<a class="help" data-toggle="popover" title="Popover title" data-content="And here's some amazing content. It's very engaging. Right?"></a></span></th>
+                                                <th><span>Hành động</span></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                                
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+	<script src="/static/assets/js/pages/edit_rule.js"></script>
+
+{% endblock javascripts %}
