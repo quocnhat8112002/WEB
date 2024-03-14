@@ -30,6 +30,7 @@ socket.on('respone', function(data) {
     if (rqId1 == rqId2) {
         console.log(rqId2)
         if ( fbValue == "0"){
+            alert("Điều khiển thành công rơ le có id:" + id)
             getData1();
         } else {
             alert("Điều khiển thất bại rơ le có id:" + id);

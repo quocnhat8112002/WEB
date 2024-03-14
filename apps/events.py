@@ -42,7 +42,7 @@ def mqtt_subscribe(client: mqtt_client):
         data = json.loads(str(msg.payload.decode()))
         #kiểm tra topic và chia hướng xử lí
         #Topic này xử lí khi nhận dữ liệu từ esp
-        if topic == 'rems/telemetry/dev/#':
+        if topic == 'rems/telemetry/dev':
             print(topic)
             post_api(data)
             #đẩy dữ liệu lên front end qua 
@@ -52,12 +52,22 @@ def mqtt_subscribe(client: mqtt_client):
         if topic == 'rems/respone/dev':
             print(topic)
             fb_value = data.get('fb')
+            rp = data.get('rp')
             # Kiểm tra giá trị và thực hiện xử lý
-            if fb_value == "0":
-                post_api(data)
-                socketio.emit('respone' ,data)
-            else :
-                socketio.emit('respone' ,data)
+            if fb_value is not None:
+                if fb_value == "0":
+                    post_api(data)
+                    socketio.emit('respone' ,data)
+                else :
+                    socketio.emit('respone' ,data)
+            if rp is not None:
+                if rp == 0:
+                    post_api(data)
+                    socketio.emit('rule', data)
+                else:
+                    mes ="Tự động tắt thất bại, hãy kiểm tra lại controller"
+                    socketio.emit('err',mes)
+
     # nhận tất cả các tin nhắn trên chủ đề con
     client.subscribe('rems/telemetry/dev/#')
     client.subscribe('rems/respone/dev/#')
@@ -82,7 +92,7 @@ def post_api(data):
     # Kiểm tra trạng thái của yêu cầu
     if response1.status_code == 200:
         print('API request successful')
-        if "pir" in data or "temp" in data or "i" in data:
+        if "pir" in data or "i" in data:
             api_url2 = 'http://127.0.0.1:5000/room_status'
             response2 = requests.put(api_url2, json=data, headers=headers)
             if response2.status_code == 200:
@@ -91,3 +101,5 @@ def post_api(data):
                 print(f'API request failed with status code {response2.status_code}')
     else:
         print(f'API request failed with status code {response1.status_code}')
+
+

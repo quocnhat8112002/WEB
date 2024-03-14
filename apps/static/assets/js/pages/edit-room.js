@@ -10,6 +10,8 @@ function updateRoom() {
     // Lấy giá trị từ các trường nhập liệu
     var name = document.getElementById('editName').value;
     var description = document.getElementById('editDescription').value;
+    var time = document.getElementById('editTime').value;
+
     if (name){
         console.log("da kiem tra xong")
         var data = {
@@ -34,8 +36,9 @@ function updateRoom() {
             return response.json();
         })
         .then(data => {
-            // Xử lý kết quả từ server (nếu cần)
-            console.log('API Response:', data);
+            if(time){
+                edit_time_condition(time);
+            }
             window.location.href = '/index';
         })
         .catch(error => {
@@ -44,5 +47,32 @@ function updateRoom() {
     } else {
         alert('Please enter a room name.');
     }
+
+}
+function edit_time_condition(time){
+    const urlParams = new URLSearchParams(window.location.search);
+    const room_id = urlParams.get('room_id');
+    var data = {
+        time_condition: time
+    };
+    fetch(`/room_status/time/${room_id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json', // Đặt loại nội dung là JSON
+        },
+        body: JSON.stringify(data), // Chuyển đổi đối tượng JavaScript thành chuỗi JSON
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        window.location.href = '/index';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
     
 }

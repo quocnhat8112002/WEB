@@ -23,9 +23,8 @@ function addRoom() {
             return response.json();
         })
         .then(data => {
-            // Xử lý kết quả từ server (nếu cần)
-            console.log('API Response:', data);
-            window.location.href = '/index';
+            //Tạo bản ghi roomStatus
+            post_room_status(data);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -35,4 +34,27 @@ function addRoom() {
     }
     
 }
+function post_room_status(data){
+    // Gửi yêu cầu POST đến API
+    fetch('/room_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json', // Đặt loại nội dung là JSON
+        },
+        body: JSON.stringify(data), // Chuyển đổi đối tượng JavaScript thành chuỗi JSON
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        window.location.href = '/index';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
 

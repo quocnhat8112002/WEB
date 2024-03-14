@@ -54,13 +54,13 @@ def configure_database(app):
         db.session.remove()
 
     #gọi hàm thực hiện lịch
-    # register_scheduler_job(app)
+    register_scheduler_job(app)
 
 # Thêm hàm đăng ký công việc lên lịch
 def register_scheduler_job(app):
     from .rule import scheduler ,check_conditions
     # Đăng ký công việc kiểm tra mỗi 1 phút
-    scheduler.add_job(check_conditions, 'interval', minutes=0.2)
+    scheduler.add_job(check_conditions, 'interval', minutes=0.1)
     # seconds=0.1
     # Bắt đầu lịch
     scheduler.start()

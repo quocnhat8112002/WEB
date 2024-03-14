@@ -3,6 +3,7 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
+import json
 from operator import and_
 
 import requests
@@ -137,9 +138,13 @@ def add_room():
     data = request.form.to_dict()
     print(data)
     room = Room(name=data['name'], description=data['description'])
-    print("abc")
     room.save()
-    return jsonify(data, 200)
+    db.session.refresh(room)
+    response_data = {
+        'room_id': room.id
+    }
+    return jsonify(response_data)
+    
 
 @blueprint.route('/room/<int:room_id>', methods=['DELETE'])
 def delete_room_by_id(room_id):
@@ -325,6 +330,7 @@ def get_device_state(room_id , type):
 
     return jsonify({'device_states': device_states})
 
+
 @blueprint.route('/device-state', methods=['POST'])
 def add_device_state():
     data = request.get_json()
@@ -462,7 +468,7 @@ def get_latest_device_state(type):
 def request_esp():
     data = request.get_json()
     print(data)
-    client.publish("rems/client/request", payload=str(data))
+    client.publish("rems/request/dev", payload=str(data))
     return jsonify(data, 200)
 
 ##########  ROOM STATUS   ############################
@@ -472,13 +478,35 @@ def add_status():
     data = request.get_json()
     room_id = data['room_id'] 
     time_stamp = datetime.now()
-    resource = data['resource'] 
-    value = data['value']
-    roomStatus = RoomStatus(room_id=room_id,  time_stamp = time_stamp, resource= resource ,value= value)
-    roomStatus.save()
+    # Create the first record with resource="pir"
+    data_pir = data.copy()
+    data_pir['resource'] = 'pir'
+    data_pir.pop('room_id', None)  # Loại bỏ room_id từ data_pir
+    roomStatus_pir = RoomStatus(room_id=room_id, time_stamp=time_stamp, **data_pir ,value="", time_condition=10)
+    roomStatus_pir.save()
+
+    # Create the second record with resource="i"
+    data_i = data.copy()
+    data_i['resource'] = 'i'
+    data_i.pop('room_id', None)  # Loại bỏ room_id từ data_i
+    roomStatus_i = RoomStatus(room_id=room_id, time_stamp=time_stamp, **data_i ,value="", time_condition=0)
+    roomStatus_i.save()
+
     return jsonify(data, 200)
 
-#Cập nhật trạng thái mới của bảng
+#Cập nhật time condition
+@blueprint.route('/room_status/time/<int:room_id>', methods=['PUT'])
+def update_time_status_room(room_id):
+    data = request.get_json()
+    new_time_condition = data['time_condition']
+    # Tìm và cập nhật bản ghi tương ứng
+    room_status_to_update = RoomStatus.query.filter_by(room_id=room_id, resource='pir').first()
+    if room_status_to_update:
+        room_status_to_update.time_condition = new_time_condition
+        db.session.commit()
+        return jsonify({"message": "Time condition updated successfully"}, 200)
+
+#Cập nhật trạng thái mới của bảng từ message
 @blueprint.route('/room_status', methods=['PUT'])
 def update_status_room():
     data = request.get_json()
@@ -592,58 +620,96 @@ def get_all_action():
 @blueprint.route('/rule/request', methods=['POST'])
 def rule_request():
     data = request.get_json()
-    print(data)
-    # Khởi tạo mảng id_device chứa id của các thiết bị cần tắt
-    id_device = []
-    # Lặp qua từng giá trị trong mảng 'ids'
-    for room_id in data:
-        print(room_id)
-        # Tìm bản ghi trong bảng Device có room_id và type tương ứng
-        device_record = Device.query.filter_by(room_id=int(room_id), type='controller').first()
-
-        # Nếu bản ghi tồn tại, thêm id vào mảng id_device
-        if device_record:
-            id_device.append(device_record.id)
-
-    print("abcb")
-    client.publish("rems/rule/request", payload=str(id_device))
+    list_id = []
+    # Lặp qua mỗi device_id
+    for device_id in data:
+        # Tạo một từ điển mới
+        device_dict = {'id': device_id, 'sw1': 0 ,'sw2':0}
+        # Thêm từ điển vào danh sách JSON
+        list_id.append(device_dict)
+    json_data = json.dumps(list_id)
+    print("list:",json_data)
+    client.publish("rems/request/dev", payload=(json_data))
     return jsonify( 200)
+    
 
 @blueprint.route('/rule', methods=['POST'])
 def rule():
-    # Lấy thời điểm 10 phút trước
-    ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
-    # Lấy tất cả các bản ghi RoomStatus có trường resource='pir' và time_stamp <= ten_minutes_ago
+    #Danh sách các phòng mà api sẽ gửi lệnh tắt lên mqtt
+    ids = []
+    ###########################################################################
+    #Lấy ra các phòng có time_stamp thỏa mãn với điều kiện time condition của pir
+    time = datetime.now()
+    # Lấy tất cả các bản ghi RoomStatus có trường resource='pir' 
     pir_records = RoomStatus.query.filter(
         RoomStatus.resource == 'pir',
-        RoomStatus.time_stamp <= ten_minutes_ago
     ).all()
-    # Lưu danh sách room_id của những bản ghi có điều kiện
-    room_ids = []
+    # Lưu danh sách room_id của những bản ghi có điều kiện time thỏa mãn của pir
+    pir_room_ids = []
     for record in pir_records:
-        room_ids.append(record)
+        if record.time_stamp <= time - timedelta(minutes=record.time_condition):
+            pir_room_ids.append(record)
 
     # Loại bỏ các room_id trùng lặp (nếu có)
-    room_ids = list(set(room_ids))
-
-    if room_ids :
+    pir_room_ids = list(set(pir_room_ids))
+    print(pir_room_ids)
+    ###############################################################################
+    #Danh sách phòng với giá trị i
+    i_records = RoomStatus.query.filter(
+        RoomStatus.resource == 'i',
+    ).all()    
+    ##################################################################################
+    if pir_room_ids or i_records:
         # Lọc bảng RuleCondition để lấy ra bản ghi có trường resource = 'pir'
         pir_conditions = RuleCondition.query.filter_by(resource='pir').first()
         #Gán kiểu điều kiện     
         value_condition = pir_conditions.condition
         #Gía trị để thỏa mãn điều kiện
         value = pir_conditions.value
+        #Id rule condition
         id = pir_conditions.id
-        #Danh sách các phòng thỏa mãn condition
+        ################################################################################
+        #Lọc bảng ruleCondition tìm bản ghi của i
+        i_conditions = RuleCondition.query.filter_by(resource='i').first()
+        #Gán kiểu điều kiện     
+        i_condition = i_conditions.condition
+        #Gía trị để thỏa mãn điều kiện
+        i_value = i_conditions.value
+        #Id rule condition
+        i_id = i_conditions.id
+        #Danh sách phòng có i lớn hơn i condition
+        i_room =[]
+        #Kiểm tra condition của i
+        for i in i_records:
+            if i_condition == "1":
+                if i.value > i_value:
+                    i_room.append(i)
+        #Tiếp tục kiểm tra với id ruleAction xem làm gì
+        # Lặp qua danh sách các bản ghi trong bảng RuleAction
+        if i_id:
+            #Tiếp tục tìm action thỏa mãn với id rule
+            i_actions = []
+            # Lặp qua danh sách các bản ghi trong bảng RuleAction
+            for action in RuleAction.query.filter_by(id_rule=i_id).all():
+                # Thêm bản ghi vào danh sách actions
+                i_actions.append(action)
+                # Kiểm tra xem danh sách actions có tồn tại hay không         
+            if i_actions:
+                for ac in i_actions:
+                    if ac.device == "sw" and ac.value == "0":
+                    #Thỏa mãn action là tắt tất cả thiết bị thì thêm các phòng có id = i_room vào danh sách gửi lệnh tăt
+                        for i in i_room :
+                            ids.append(i.room_id)
+        #############################################################################
+        #Danh sách các phòng thỏa mãn condition của pir
         rooms = []
         #Kiểm tra condition xem điều kiện là gì, 0 ở đây là = , 1 là >, 2 là <
         if value_condition == "0":
-            for room_id in room_ids:
+            for room_id in pir_room_ids:
             # Kiểm tra xem bản ghi có tồn tại và có thỏa mãn điều kiện trong RuleCondition không
                 if  room_id.value == value:
                     # Thêm bản ghi vào danh sách rooms
                     rooms.append(room_id)
-
             #Tiếp tục tìm action thỏa mãn với id rule
             actions = []
             # Lặp qua danh sách các bản ghi trong bảng RuleAction
@@ -654,15 +720,27 @@ def rule():
             # Kiểm tra xem danh sách actions có tồn tại hay không
             if actions:
                 #lấy ra id của các phòng thỏa mãn điều kiện
-                ids = []
                 for room in rooms:
                     ids.append(room.room_id)
-                
-                print(ids)
+
+                #Danh sách chứa nhưng id controller mà 1 trong 2 sw đang bật
+                device_id =[]
+                for id in ids:
+                    # Truy vấn các thiết bị có room_id tương ứng và type là "controller"
+                    devices = Device.query.filter_by(room_id=id, type='controller').all()
+                    # Lặp qua các thiết bị
+                    for device in devices:
+                        # Tìm bản ghi mới nhất của 'sw1' và 'sw2' cho mỗi device_id
+                        latest_states_sw1 = DeviceState.query.filter_by(device_id=device.id, resource='sw1').order_by(DeviceState.time_stamp.desc()).first()
+                        latest_states_sw2 = DeviceState.query.filter_by(device_id=device.id, resource='sw2').order_by(DeviceState.time_stamp.desc()).first()
+
+                        # Nếu bản ghi mới nhất của 'sw1' có value = 1, thêm device_id vào danh sách
+                        if latest_states_sw1.value == "1" or latest_states_sw2.value == "1":
+                            device_id.append(device.id)
                 for rule_action in actions:
                     if rule_action.device == "sw" and rule_action.value == "0" :
                         # Gửi lệnh tắt tất cả các sw của các phòng trong ids
-                        data = ids
+                        data = device_id
                         api_url = 'http://127.0.0.1:5000/rule/request'
                         headers = {'Content-Type': 'application/json'}
                         # Thực hiện yêu cầu POST
@@ -676,3 +754,11 @@ def rule():
     return ("da thuc hien router" )
             
 
+@blueprint.route('/room_id', methods=['GET'])
+def get_id():
+    data = request.get_json()
+    id = data.get('id')
+    device = Device.query.filter_by(device_id=id).first()
+
+    room_id = device.room_id
+    return jsonify(room_id)
