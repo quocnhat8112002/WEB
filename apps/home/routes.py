@@ -729,14 +729,15 @@ def rule():
                     # Truy vấn các thiết bị có room_id tương ứng và type là "controller"
                     devices = Device.query.filter_by(room_id=id, type='controller').all()
                     # Lặp qua các thiết bị
-                    for device in devices:
-                        # Tìm bản ghi mới nhất của 'sw1' và 'sw2' cho mỗi device_id
-                        latest_states_sw1 = DeviceState.query.filter_by(device_id=device.id, resource='sw1').order_by(DeviceState.time_stamp.desc()).first()
-                        latest_states_sw2 = DeviceState.query.filter_by(device_id=device.id, resource='sw2').order_by(DeviceState.time_stamp.desc()).first()
+                    if devices :
+                        for device in devices:
+                            # Tìm bản ghi mới nhất của 'sw1' và 'sw2' cho mỗi device_id
+                            latest_states_sw1 = DeviceState.query.filter_by(device_id=device.id, resource='sw1').order_by(DeviceState.time_stamp.desc()).first()
+                            latest_states_sw2 = DeviceState.query.filter_by(device_id=device.id, resource='sw2').order_by(DeviceState.time_stamp.desc()).first()
 
-                        # Nếu bản ghi mới nhất của 'sw1' có value = 1, thêm device_id vào danh sách
-                        if latest_states_sw1.value == "1" or latest_states_sw2.value == "1":
-                            device_id.append(device.id)
+                            # Nếu bản ghi mới nhất của 'sw1' có value = 1, thêm device_id vào danh sách
+                            if latest_states_sw1.value == "1" or latest_states_sw2.value == "1":
+                                device_id.append(device.id)
                 for rule_action in actions:
                     if rule_action.device == "sw" and rule_action.value == "0" :
                         # Gửi lệnh tắt tất cả các sw của các phòng trong ids

@@ -55,7 +55,7 @@ def mqtt_subscribe(client: mqtt_client):
             rp = data.get('rp')
             # Kiểm tra giá trị và thực hiện xử lý
             if fb_value is not None:
-                if fb_value == "0":
+                if fb_value == 0:
                     post_api(data)
                     socketio.emit('respone' ,data)
                 else :
