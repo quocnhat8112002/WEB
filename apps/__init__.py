@@ -54,7 +54,7 @@ def configure_database(app):
         db.session.remove()
 
     #gọi hàm thực hiện lịch
-    register_scheduler_job(app)
+    # register_scheduler_job(app)
 
 # Thêm hàm đăng ký công việc lên lịch
 def register_scheduler_job(app):

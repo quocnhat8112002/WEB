@@ -38,35 +38,40 @@ def mqtt_subscribe(client: mqtt_client):
     # là hàm callback được gọi khi nhận được một tin nhắn từ MQTT broker. 
     # Nó chuyển đổi dữ liệu từ dạng byte thành dạng JSON và in ra chủ đề của tin nhắn.
     def on_message(client, userdata, msg):
-        topic = msg.topic
-        data = json.loads(str(msg.payload.decode()))
-        #kiểm tra topic và chia hướng xử lí
-        #Topic này xử lí khi nhận dữ liệu từ esp
-        if topic == 'rems/telemetry/dev':
-            print(topic)
-            post_api(data)
-            #đẩy dữ liệu lên front end qua 
-            socketio.emit('data', data)
+        try:
+            topic = msg.topic
+            data = json.loads(str(msg.payload.decode()))
+            #kiểm tra topic và chia hướng xử lí
+            #Topic này xử lí khi nhận dữ liệu từ esp
+            if topic == 'rems/telemetry/dev':
+                print(topic)
+                post_api(data)
+                #đẩy dữ liệu lên front end qua 
+                socketio.emit('data', data)
 
-        #TOPIC này xử lí khi nhận dữ liệu phản hồi từ esp
-        if topic == 'rems/respone/dev':
-            print(topic)
-            fb_value = data.get('fb')
-            rp = data.get('rp')
-            # Kiểm tra giá trị và thực hiện xử lý
-            if fb_value is not None:
-                if fb_value == 0:
-                    post_api(data)
-                    socketio.emit('respone' ,data)
-                else :
-                    socketio.emit('respone' ,data)
-            if rp is not None:
-                if rp == 0:
-                    post_api(data)
-                    socketio.emit('rule', data)
-                else:
-                    mes ="Tự động tắt thất bại, hãy kiểm tra lại controller"
-                    socketio.emit('err',mes)
+            #TOPIC này xử lí khi nhận dữ liệu phản hồi từ esp
+            if topic == 'rems/respone/dev':
+                print(topic)
+                fb_value = data.get('fb')
+                rp = data.get('rp')
+                # Kiểm tra giá trị và thực hiện xử lý
+                if fb_value is not None:
+                    if fb_value == 0:
+                        post_api(data)
+                        socketio.emit('respone' ,data)
+                    else :
+                        socketio.emit('respone' ,data)
+                if rp is not None:
+                    if rp == 0:
+                        post_api(data)
+                        socketio.emit('rule', data)
+                    else:
+                        mes ="Tự động tắt thất bại, hãy kiểm tra lại controller"
+                        socketio.emit('err',mes)
+        except json.decoder.JSONDecodeError:
+        # Nếu không thể phân tích message thành JSON, bỏ qua việc xử lý
+            print("Received non-JSON message. Skipping processing.")
+            return  
 
     # nhận tất cả các tin nhắn trên chủ đề con
     client.subscribe('rems/telemetry/dev/#')

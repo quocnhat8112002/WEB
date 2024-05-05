@@ -468,7 +468,8 @@ def get_latest_device_state(type):
 def request_esp():
     data = request.get_json()
     print(data)
-    client.publish("rems/request/dev", payload=str(data))
+    json_str = json.dumps(data)
+    client.publish("rems/request/dev", payload=(json_str))
     return jsonify(data, 200)
 
 ##########  ROOM STATUS   ############################
@@ -620,16 +621,13 @@ def get_all_action():
 @blueprint.route('/rule/request', methods=['POST'])
 def rule_request():
     data = request.get_json()
-    list_id = []
     # Lặp qua mỗi device_id
     for device_id in data:
         # Tạo một từ điển mới
         device_dict = {'id': device_id, 'sw1': 0 ,'sw2':0}
-        # Thêm từ điển vào danh sách JSON
-        list_id.append(device_dict)
-    json_data = json.dumps(list_id)
-    print("list:",json_data)
-    client.publish("rems/request/dev", payload=(json_data))
+        json_data = json.dumps(device_dict)
+        client.publish("rems/request/dev", payload=(json_data))
+    
     return jsonify( 200)
     
 
@@ -738,6 +736,8 @@ def rule():
                             # Nếu bản ghi mới nhất của 'sw1' có value = 1, thêm device_id vào danh sách
                             if latest_states_sw1.value == "1" or latest_states_sw2.value == "1":
                                 device_id.append(device.id)
+                # Loại bỏ các id trùng lặp (nếu có)
+                device_id = list(set(device_id))
                 for rule_action in actions:
                     if rule_action.device == "sw" and rule_action.value == "0" :
                         # Gửi lệnh tắt tất cả các sw của các phòng trong ids
