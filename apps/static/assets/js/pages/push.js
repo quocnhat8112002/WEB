@@ -19,3 +19,6 @@ socketI.on('err', function(data) {
     console.log('đã nhận được thông báo lỗi');
     alert(data)    
 });
+socketI.on('message',function(data){
+    alert(data)
+})

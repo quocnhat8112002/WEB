@@ -12,7 +12,7 @@ from flask import render_template, request, jsonify ,redirect ,url_for
 from flask_login import login_required
 from jinja2 import TemplateNotFound
 
-from apps.home.model import Sales ,Room ,Device ,DeviceState ,RoomStatus ,RuleCondition ,RuleAction
+from apps.home.model import Sales ,Room ,Device ,DeviceState ,RoomStatus ,RuleCondition ,RuleAction , Building, Floor, Bedroom, Livingroom
 from flask_socketio import emit
 from sqlalchemy.sql import func ,desc
 from apps import db
@@ -763,3 +763,13 @@ def get_id():
 
     room_id = device.room_id
     return jsonify(room_id)
+###################################
+###################################
+#Thêm mới tòa nhà
+@blueprint.route('/add_building', methods=['POST'])
+def add_building():
+    data = request.get_json()
+    buiding = Building(name=data['name'], description=data['description'])
+    buiding.save()
+    
+    return jsonify(data)

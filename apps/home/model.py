@@ -154,3 +154,59 @@ class Sales(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+#Bảng các tòa
+class Building(db.Model):
+    __tablename__ = 'Building'
+
+    id = db.Column(db.Integer , primary_key = True)
+    name = db.Column(db.String(64))
+    description = db.Column(db.String(64))
+
+    def __init__(self  ,name ,description  ):
+        self.name = name
+        self.description = description
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+class Floor(db.Model):
+    __tablename__ = 'Floor'
+
+    id = db.Column(db.Integer , primary_key = True)
+    id_building = db.Column(db.Integer, db.ForeignKey("Building.id") ,nullable = False)
+    name = db.Column(db.String(64))
+
+    def __init__(self  ,name ,id_building):
+        self.name = name
+        self.id_building = id_building
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+class Bedroom(db.Model):
+    __tablename__ = 'Bedroom'
+
+    id = db.Column(db.Integer , primary_key = True)
+    id_floor = db.Column(db.Integer, db.ForeignKey("Floor.id") ,nullable = False)
+    name = db.Column(db.String(64))
+
+    def __init__(self  ,name , id_floor):
+        self.name = name
+        self.id_floor = id_floor
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+class Livingroom(db.Model):
+    __tablename__ = 'Livingroom'
+
+    id = db.Column(db.Integer , primary_key = True)
+    id_floor = db.Column(db.Integer, db.ForeignKey("Floor.id") ,nullable = False)
+    name = db.Column(db.String(64))
+
+    def __init__(self  ,name , id_floor ):
+        self.name = name
+        self.id_floor = id_floor
+    def save(self):
+        db.session.add(self)
+        db.session.commit()

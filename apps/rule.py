@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apps.home.model import Room ,Device ,DeviceState ,RoomStatus ,RuleCondition ,RuleAction
 import requests
-
 scheduler = BackgroundScheduler()
 
 def check_conditions():

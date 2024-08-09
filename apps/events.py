@@ -1,9 +1,12 @@
 from flask_socketio import SocketIO
 from paho.mqtt import client as mqtt_client
+from apscheduler.schedulers.background import BackgroundScheduler
 import json
 import random
 from flask import Flask
-
+import requests,time
+# Khởi tạo biến last_message_time với giá trị ban đầu
+last_message_time = time.time()
 socketio = SocketIO( Flask(__name__) ,cors_allowed_origins='*', logger=True)
 client_id = f'rems-mqtt-{random.randint(0, 1000)}'
     # username = 'emqx'
@@ -19,7 +22,7 @@ def connect_event():
 # tạo một kết nối MQTT tới broker được chỉ định và thiết lập các xử lý sự kiện khi kết nối được thiết lập (hoặc thất bại). 
 # Nó trả về một đối tượng mqtt_client.
 def mqtt_connect(broker):
-    global client
+    global client 
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -38,12 +41,14 @@ def mqtt_subscribe(client: mqtt_client):
     # là hàm callback được gọi khi nhận được một tin nhắn từ MQTT broker. 
     # Nó chuyển đổi dữ liệu từ dạng byte thành dạng JSON và in ra chủ đề của tin nhắn.
     def on_message(client, userdata, msg):
+        global last_message_time
         try:
             topic = msg.topic
             data = json.loads(str(msg.payload.decode()))
             #kiểm tra topic và chia hướng xử lí
             #Topic này xử lí khi nhận dữ liệu từ esp
             if topic == 'rems/telemetry/dev':
+                last_message_time =time.time()
                 print(topic)
                 post_api(data)
                 #đẩy dữ liệu lên front end qua 
@@ -68,11 +73,11 @@ def mqtt_subscribe(client: mqtt_client):
                     else:
                         mes ="Tự động tắt thất bại, hãy kiểm tra lại controller"
                         socketio.emit('err',mes)
+            
         except json.decoder.JSONDecodeError:
         # Nếu không thể phân tích message thành JSON, bỏ qua việc xử lý
             print("Received non-JSON message. Skipping processing.")
             return  
-
     # nhận tất cả các tin nhắn trên chủ đề con
     client.subscribe('rems/telemetry/dev/#')
     client.subscribe('rems/respone/dev/#')
@@ -107,4 +112,15 @@ def post_api(data):
     else:
         print(f'API request failed with status code {response1.status_code}')
 
+scheduler = BackgroundScheduler()
 
+def check_connect():
+    global last_message_time
+    current_time = time.time()
+    # Tính thời gian từ lúc nhận được tin nhắn đến thời điểm hiện tại
+    time_since_last_message = current_time - last_message_time
+    # Kiểm tra nếu đã quá 7 giây mà không nhận được tin nhắn
+    if time_since_last_message > 7:
+        print("k nhận đc tb")
+        data = "ESP bị mất kết nối"
+        socketio.emit('message', data)
