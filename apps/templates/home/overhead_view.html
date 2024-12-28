@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 Image Viewer</title>
+    <link rel="stylesheet" href="/static/assets/css/pannellum.css">
+    <style>
+        #panorama {
+            width: 100%;
+            height: 100vh;
+        }
+        #time-buttons {
+            position: fixed; /* Đổi từ absolute sang fixed */
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000; /* Đảm bảo các nút nằm trên các thành phần khác */
+        }
+
+        #time-buttons button {
+            margin: 5px 0;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #time-buttons button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="time-buttons">
+        <button onclick="changeView('morning')">Sáng</button>
+        <button onclick="changeView('midday')">Trưa</button>
+        <button onclick="changeView('afternoon')">Chiều</button>
+        <button onclick="changeView('evening')">Tối</button>
+    </div>
+    <div id="panorama"></div>
+
+    <script src="/static/assets/js/pannellum.js"></script>
+    <script src="/static/assets/js/libpannellum.js"></script>
+
+    <script>
+         const scenes = {
+            "livingroom": {
+                "morning": "/static/assets/images/living_sang.jpg",
+                "midday": "/static/assets/images/living_sang.jpg",
+                "afternoon": "/static/assets/images/living_toi.jpg",
+                "evening": "/static/assets/images/living_toi.jpg"
+            },
+            "bedroom": {
+                "morning": "/static/assets/images/bedroom_sang.jpg",
+                "midday": "/static/assets/images/bedroom_sang.jpg",
+                "afternoon": "/static/assets/images/bedroom_toi.jpg",
+                "evening": "/static/assets/images/bedroom_toi.jpg"
+            },
+            "bathroom": {
+                "morning": "/static/assets/images/bathroom_sang.jpg",
+                "midday": "/static/assets/images/bathroom_sang.jpg",
+                "afternoon": "/static/assets/images/bathroom_toi.jpg",
+                "evening": "/static/assets/images/bathroom_toi.jpg"
+            }
+            // Các cảnh khác nếu cần
+            
+        };
+        let currentScene = "livingroom"; // Cảnh mặc định ban đầu
+        let currentTime = "morning"; // Thời gian mặc định ban đầu
+        const viewer = pannellum.viewer('panorama', {
+            "default": {
+                "firstScene": currentScene,
+                "author": "Mô hình Việt",
+                "sceneFadeDuration": 1000
+            },
+            "scenes": {
+                "livingroom": getSceneConfig("livingroom"),
+                "bedroom": getSceneConfig("bedroom"),
+                "bathroom": getSceneConfig("bathroom")
+            }
+        });
+        function getSceneConfig(sceneId) {
+            return {
+                "title": sceneId,
+                "hfov": 110,
+                "pitch": -3,
+                "yaw": 117,
+                "type": "equirectangular",
+                "panorama": scenes[sceneId][currentTime],
+                "hotSpots": getHotSpots(sceneId)
+            };
+        }
+        function getHotSpots(sceneId) {
+            const hotSpots = {
+                "livingroom": [
+                    {
+                        "pitch": -2.1,
+                        "yaw": 132.9,
+                        "type": "scene",
+                        "text": "Phòng ngủ",
+                        "sceneId": "bedroom",
+                        "clickHandlerFunc": () => changeScene('bedroom')
+                    },
+                    {
+                        "pitch": -2.1,
+                        "yaw": 160.9,
+                        "type": "scene",
+                        "text": "Nhà vệ sinh",
+                        "sceneId": "bathroom",
+                        "clickHandlerFunc": () => changeScene('bathroom')
+                    }
+                ],
+                "bedroom": [
+                    {
+                        "pitch": -2.1,
+                        "yaw": 132.9,
+                        "type": "scene",
+                        "text": "Phòng khách",
+                        "sceneId": "livingroom",
+                        "clickHandlerFunc": () => changeScene('livingroom')
+                    }
+                ],
+                "bathroom": [
+                    {
+                        "pitch": -6.1,
+                        "yaw": 172.9,
+                        "type": "scene",
+                        "text": "Phòng khách",
+                        "sceneId": "livingroom",
+                        "clickHandlerFunc": () => changeScene('livingroom')
+                    }
+                ]
+            };
+            return hotSpots[sceneId] || [];
+        }
+        function changeView(time) {
+            currentTime = time;
+            const newPanorama = scenes[currentScene][currentTime];
+            if (newPanorama) {
+                const sceneConfig = getSceneConfig(currentScene);
+                sceneConfig.panorama = newPanorama;
+                viewer.removeScene(currentScene);
+                viewer.addScene(currentScene, sceneConfig);
+                viewer.loadScene(currentScene);
+            } else {
+                console.error(`Không tìm thấy ảnh panorama cho cảnh '${currentScene}' vào thời gian '${currentTime}'`);
+            }
+        }
+
+        function changeScene(sceneId) {
+            currentScene = sceneId;
+            const newPanorama = scenes[currentScene][currentTime];
+            if (newPanorama) {
+                const sceneConfig = getSceneConfig(sceneId);
+                sceneConfig.panorama = newPanorama;
+                viewer.removeScene(sceneId);
+                viewer.addScene(sceneId, sceneConfig);
+                viewer.loadScene(sceneId);
+            } else {
+                console.error(`Không tìm thấy ảnh panorama cho cảnh '${sceneId}' vào thời gian '${currentTime}'`);
+            }
+        }
+        
+    </script>
+</body>
+</html>
